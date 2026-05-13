@@ -1,6 +1,6 @@
 import express from 'express';
 const router = express.Router();
-import Post from '../models/Post';
+import Post from '../models/Post.js';
 
 // GET / — Get all posts (optionally filter by category)
 router.get('/', async (req, res) => {

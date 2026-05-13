@@ -1,122 +1,92 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
-import './App.css'
+import { useState, useEffect } from 'react';
+import axios from 'axios';
+import { Container, Row, Col, Alert, Spinner } from 'react-bootstrap';
+import AppNavbar from './components/AppNavbar';
+import PostCard from './components/PostCard';
+import PostForm from './components/PostForm';
+import CategoryFilter from './components/CategoryFilter';
+
+const API = '/api/posts';
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [posts, setPosts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [showForm, setShowForm] = useState(false);
+  const [category, setCategory] = useState('All');
+  const [alert, setAlert] = useState(null); // { msg, variant }
+
+  const fetchPosts = async () => {
+    setLoading(true);
+    const params = category !== 'All' ? { category } : {};
+    const res = await axios.get(API, { params });
+    setPosts(res.data);
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    fetchPosts();
+  }, [category]);
+
+  const showAlert = (msg, variant = 'success') => {
+    setAlert({ msg, variant });
+    setTimeout(() => setAlert(null), 3000);
+  };
+
+  const addPost = async (data) => {
+    await axios.post(API, data);
+    fetchPosts();
+    showAlert('📰 Article published successfully!');
+  };
+
+  const deletePost = async (id) => {
+    await axios.delete(`${API}/${id}`);
+    fetchPosts();
+    showAlert('🗑️ Article deleted', 'danger');
+  };
 
   return (
     <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.jsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
+      <AppNavbar onWriteClick={() => setShowForm(true)} />
 
-      <div className="ticks"></div>
+      <Container className="py-4">
 
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
+        {/* Alert message */}
+        {alert && (
+          <Alert variant={alert.variant}>{alert.msg}</Alert>
+        )}
 
-      <div className="ticks"></div>
-      <section id="spacer"></section>
+        {/* Category filter */}
+        <CategoryFilter active={category} onChange={setCategory} />
+
+        {/* Loading spinner */}
+        {loading ? (
+          <div className="text-center py-5">
+            <Spinner animation="border" />
+          </div>
+        ) : posts.length === 0 ? (
+          <Alert variant="light">
+            No posts yet. Be the first to write one! 📰
+          </Alert>
+        ) : (
+          // 3-column responsive grid using Bootstrap Row + Col
+          <Row xs="1" md="2" lg="3" className="g-4">
+            {posts.map(post => (
+              <Col key={post._id}>
+                <PostCard post={post} onDelete={deletePost} />
+              </Col>
+            ))}
+          </Row>
+        )}
+
+      </Container>
+
+      <PostForm
+        show={showForm}
+        onClose={() => setShowForm(false)}
+        onSubmit={addPost}
+      />
     </>
-  )
+  );
 }
 
-export default App
+export default App;
