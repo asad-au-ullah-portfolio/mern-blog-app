@@ -1,22 +1,17 @@
-import express from 'express';
-import mongoose from 'mongoose';
-import cors from 'cors';
+// server.js  (LOCALHOST ENTRY)
 import 'dotenv/config';
-import postRoutes from './routes/posts.js';
 
-const app = express();
+import app from './src/app.js';
+import connectDB from './src/db.js';
 
-app.use(cors());
-app.use(express.json());
+const PORT = process.env.PORT || 5000;
 
-app.use('/api/posts', postRoutes);
+const startServer = async () => {
+    await connectDB();
 
-mongoose
-    .connect(process.env.MONGO_URI)
-    .then(() => {
-        console.log('MongoDB Connected!');
-        app.listen(process.env.PORT, () =>
-            console.log(`Server running on port ${process.env.PORT}`)
-        );
-    })
-    .catch(err => console.log(err));
+    app.listen(PORT, () => {
+        console.log(`Server running on port ${PORT}`);
+    });
+};
+
+startServer();
