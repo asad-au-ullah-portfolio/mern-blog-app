@@ -14,7 +14,10 @@ function App() {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [postToEdit, setPostToEdit] = useState(null);
-  const [category, setCategory] = useState('All');
+  const [category, setCategory] = useState(() => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('category') || 'All';
+  });
   const [alert, setAlert] = useState(null); // { msg, variant }
 
   const fetchPosts = async () => {
@@ -27,7 +30,28 @@ function App() {
 
   useEffect(() => {
     fetchPosts();
+
+    const params = new URLSearchParams(window.location.search);
+    if (category !== 'All') {
+      params.set('category', category);
+    } else {
+      params.delete('category');
+    }
+    
+    const newSearch = params.toString() ? `?${params.toString()}` : '';
+    if (window.location.search !== newSearch) {
+      window.history.pushState(null, '', newSearch || window.location.pathname);
+    }
   }, [category]);
+
+  useEffect(() => {
+    const handlePopState = () => {
+      const params = new URLSearchParams(window.location.search);
+      setCategory(params.get('category') || 'All');
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
 
   const showAlert = (msg, variant = 'success') => {
     setAlert({ msg, variant });
